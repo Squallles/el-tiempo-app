@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'v3';
+const CACHE_VERSION = 'v4';
 const APP_SHELL_CACHE = `app-shell-${CACHE_VERSION}`;
 const DATA_CACHE = `data-${CACHE_VERSION}`;
 
@@ -20,7 +20,10 @@ self.addEventListener('install', (event) => {
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((keys) =>
-      Promise.all(keys.filter(k => ![APP_SHELL_CACHE, DATA_CACHE].includes(k)).map(k => caches.delete(k)))
+      Promise.all(keys
+        .filter(k => ![APP_SHELL_CACHE, DATA_CACHE].includes(k))
+        .map(k => caches.delete(k))
+      )
     )
   );
   self.clients.claim();
@@ -29,36 +32,46 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
 
+  // ⛔️ Ignorar todo lo que no sea http(s) (p. ej. chrome-extension://)
+  if (url.protocol !== 'http:' && url.protocol !== 'https:') {
+    return;
+  }
+
   const isOpenMeteo = url.hostname.endsWith('open-meteo.com');
   const isCarto = /\.basemaps\.cartocdn\.com$/.test(url.hostname);
 
   if (isOpenMeteo) {
-    // Red primero; cache de respaldo
+    // Red primero + cache de respaldo
     event.respondWith((async () => {
       try {
         const fresh = await fetch(event.request, { cache: 'no-store' });
-        const cache = await caches.open(DATA_CACHE);
-        if (fresh.ok) cache.put(event.request, fresh.clone());
+        if (event.request.method === 'GET' && fresh.ok) {
+          const cache = await caches.open(DATA_CACHE);
+          await cache.put(event.request, fresh.clone());
+        }
         return fresh;
       } catch (e) {
         const cached = await caches.match(event.request);
         if (cached) return cached;
-        return new Response(JSON.stringify({ offline: true }), { headers: { 'Content-Type': 'application/json' }, status: 200 });
+        return new Response(JSON.stringify({ offline: true }), {
+          headers: { 'Content-Type': 'application/json' }, status: 200
+        });
       }
     })());
     return;
   }
 
   if (isCarto) {
-    // Tiles de mapa siempre online
+    // Tiles siempre online
     event.respondWith(fetch(event.request));
     return;
   }
 
-  // App shell: cache-first
+  // App shell: cache-first (solo GET y http(s))
   event.respondWith(
     caches.match(event.request).then((cached) => {
-      return cached || fetch(event.request).then((resp) => {
+      if (cached) return cached;
+      return fetch(event.request).then((resp) => {
         if (event.request.method === 'GET' && resp.status === 200 && resp.type !== 'opaque') {
           const clone = resp.clone();
           caches.open(APP_SHELL_CACHE).then((c) => c.put(event.request, clone));
