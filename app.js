@@ -401,6 +401,38 @@ function weatherCodeToText(code){
   return map[code] ?? "—";
 }
 
+/* ---------- Reverse geocoding con fallback ---------- */
+async function nameFromCoords(lat, lon){
+  // 1) Intento Open-Meteo (principal)
+  try{
+    const url = `https://geocoding-api.open-meteo.com/v1/reverse?latitude=${lat}&longitude=${lon}&language=es&format=json`;
+    const res = await fetch(url, { cache:'no-store' });
+    if (res.ok) {
+      const data = await res.json();
+      const r = data?.results?.[0];
+      if (r) return [r.name, r.admin1, r.country].filter(Boolean).join(", ");
+    }
+  }catch(e){
+    console.warn("Reverse Open-Meteo falló:", e);
+  }
+
+  // 2) Fallback BigDataCloud (CORS-friendly, sin clave)
+  try{
+    const url2 = `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=es`;
+    const res2 = await fetch(url2, { cache:'no-store' });
+    if (res2.ok) {
+      const j = await res2.json();
+      const parts = [j.city || j.locality, j.principalSubdivision, j.countryName].filter(Boolean);
+      if (parts.length) return parts.join(", ");
+    }
+  }catch(e){
+    console.warn("Fallback BigDataCloud falló:", e);
+  }
+
+  // 3) Último recurso
+  return `Mi ubicación (${lat.toFixed(2)}, ${lon.toFixed(2)})`;
+}
+
 /* ---------- Offline de cortes: restaurar último pronóstico + geo auto ---------- */
 function restoreLastWeatherIfOffline(){
   window.addEventListener('load', async () => {
@@ -420,16 +452,6 @@ function restoreLastWeatherIfOffline(){
   });
 }
 
-/* ---------- Reverse geocoding ---------- */
-async function nameFromCoords(lat, lon){
-  try{
-    const url = `https://geocoding-api.open-meteo.com/v1/reverse?latitude=${lat}&longitude=${lon}&language=es&format=json`;
-    const res = await fetch(url, { cache:'no-store' });
-    const data = await res.json(); const r = data?.results?.[0];
-    if (r) return [r.name, r.admin1, r.country].filter(Boolean).join(", ");
-  }catch(e){ console.warn("Reverse geocoding falló:", e); }
-  return `Mi ubicación (${lat.toFixed(2)}, ${lon.toFixed(2)})`;}
-}
 /* ---------- Toast ---------- */
 function toast(msg){
   const el = document.createElement('div');
