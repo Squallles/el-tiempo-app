@@ -1,0 +1,15 @@
+{
+  "name": "El Tiempo — En cualquier parte",
+  "short_name": "El Tiempo",
+  "description": "Consulta el tiempo actual y la previsión en cualquier ciudad del mundo. Funciona como PWA.",
+  "lang": "es-ES",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#0f1220",
+  "theme_color": "#0f1220",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}
