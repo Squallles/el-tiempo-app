@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>El Tiempo — En cualquier parte</title>
+  <meta name="description" content="Consulta el tiempo actual y la previsión en cualquier ciudad del mundo.">
+  <link rel="stylesheet" href="styles.css" />
+
+  <!-- PWA -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#0f1220">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+  <!-- Leaflet (mapa) -->
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+    crossorigin=""
+  />
+
+  <!-- Chart.js (gráficas) -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+</head>
+<body>
+  <header class="topbar">
+    <h1>El Tiempo</h1>
+    <div class="controls">
+      <button id="themeBtn" class="ghost" title="Cambiar tema">🌓 Tema</button>
+      <button id="geoBtn" class="ghost" title="Usar mi ubicación">📍 Mi ubicación</button>
+      <label class="toggle">
+        <input id="unitToggle" type="checkbox" aria-label="Cambiar entre Celsius y Fahrenheit">
+        <span>°C / °F</span>
+      </label>
+    </div>
+  </header>
+
+  <main class="container with-sidebar">
+    <!-- MENÚ LATERAL -->
+    <aside class="sidebar">
+      <h3>Ciudades</h3>
+      <div class="city-row">
+        <select id="citySelect" size="8" aria-label="Lista de ciudades" title="Selecciona una ciudad"></select>
+      </div>
+      <div class="city-actions">
+        <button id="addCityBtn" title="Añadir la ciudad actual a la lista">➕ Añadir</button>
+        <button id="removeCityBtn" class="danger" title="Eliminar la ciudad seleccionada">🗑️ Eliminar</button>
+      </div>
+      <small class="muted">Busca una ciudad y pulsa “Añadir”. Se guardan en este navegador.</small>
+    </aside>
+
+    <!-- CONTENIDO PRINCIPAL -->
+    <section class="content">
+      <section class="search">
+        <form id="searchForm" autocomplete="off">
+          <div class="search-wrap" role="combobox" aria-haspopup="listbox" aria-owns="choices" aria-expanded="false">
+            <input id="query" type="text" placeholder="Ciudad, país..." aria-label="Ciudad" required />
+            <div id="spinner" class="spinner" aria-hidden="true"></div>
+            <button type="submit">Buscar</button>
+          </div>
+        </form>
+        <div id="choices" class="choices" role="listbox" aria-label="Resultados de búsqueda"></div>
+      </section>
+
+      <section id="results" class="results hidden" aria-live="polite">
+        <div class="location-line">
+          <h2 id="placeName">—</h2>
+          <span id="coords" class="muted">—</span>
+        </div>
+
+        <!-- MINI MAPA -->
+        <div id="mapCard" class="map-card">
+          <div id="map" class="map"></div>
+        </div>
+
+        <div class="current">
+          <div class="big-temp" id="currentTemp">—</div>
+          <div class="current-meta">
+            <div id="currentSummary">—</div>
+            <div class="meta-row">
+              <span>Viento: <strong id="wind">—</strong></span>
+              <span>Humedad: <strong id="humidity">—</strong></span>
+              <span>Presión: <strong id="pressure">—</strong></span>
+            </div>
+            <div class="meta-row">
+              <span>Amanecer: <strong id="sunrise">—</strong></span>
+              <span>Puesta: <strong id="sunset">—</strong></span>
+              <span>UV: <strong id="uv">—</strong></span>
+            </div>
+            <div class="meta-row">
+              <span>Nubosidad: <strong id="clouds">—</strong></span>
+              <span>Visibilidad: <strong id="visibility">—</strong></span>
+              <span>Lluvia hoy: <strong id="precipSum">—</strong></span>
+              <span>Horas de sol: <strong id="sunHours">—</strong></span>
+            </div>
+            <div class="meta-row">
+              <span>Última actualización: <strong id="updated">—</strong></span>
+            </div>
+          </div>
+        </div>
+
+        <h3>Próximos 7 días</h3>
+        <div id="daily" class="daily-grid"></div>
+
+        <h3>Por horas (48 h)</h3>
+        <div class="charts">
+          <div class="chart-card">
+            <h4>Temperatura</h4>
+            <canvas id="hourlyTempChart" height="120"></canvas>
+          </div>
+          <div class="chart-card">
+            <h4>Probabilidad de lluvia</h4>
+            <canvas id="hourlyRainChart" height="120"></canvas>
+          </div>
+          <div class="chart-card">
+            <h4>Viento</h4>
+            <canvas id="hourlyWindChart" height="120"></canvas>
+          </div>
+          <div class="chart-card">
+            <h4>Nubosidad</h4>
+            <canvas id="hourlyCloudChart" height="120"></canvas>
+          </div>
+        </div>
+      </section>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <small>
+      Datos por <a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo</a> ·
+      Mapas © OpenStreetMap, tiles por CARTO
+    </small>
+  </footer>
+
+  <!-- Leaflet JS -->
+  <script
+    src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+    crossorigin=""
+  ></script>
+
+  <script src="app.js" defer></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./service-worker.js'));
+      });
+    }
+  </script>
+</body>
+</html>
