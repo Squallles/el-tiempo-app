@@ -5,13 +5,17 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>El Tiempo — En cualquier parte</title>
   <meta name="description" content="Consulta el tiempo actual y la previsión en cualquier ciudad del mundo.">
-  <link rel="stylesheet" href="styles.css" />
-  <link rel="icon" href="icons/icon-192.png">
 
-  <!-- PWA -->
+  <!-- CSS principal -->
+  <link rel="stylesheet" href="styles.css" />
+
+  <!-- PWA / Iconos -->
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#0f1220">
   <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <!-- Usamos el icono PWA como favicon para evitar 404 -->
+  <link rel="icon" href="icons/icon-192.png">
+  <!-- Metas para apps instalables -->
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
 
@@ -143,7 +147,10 @@
     crossorigin=""
   ></script>
 
+  <!-- App -->
   <script src="app.js" defer></script>
+
+  <!-- Registro del Service Worker (sin paréntesis extra) -->
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
