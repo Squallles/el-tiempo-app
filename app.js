@@ -428,9 +428,8 @@ async function nameFromCoords(lat, lon){
     const data = await res.json(); const r = data?.results?.[0];
     if (r) return [r.name, r.admin1, r.country].filter(Boolean).join(", ");
   }catch(e){ console.warn("Reverse geocoding falló:", e); }
-  return `Mi ubicación (${lat.toFixed(2)}, ${lon.toFixed(2)})`;
+  return `Mi ubicación (${lat.toFixed(2)}, ${lon.toFixed(2)})`;}
 }
-
 /* ---------- Toast ---------- */
 function toast(msg){
   const el = document.createElement('div');
